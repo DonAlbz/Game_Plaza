@@ -1,0 +1,417 @@
+================================================================================
+GAME PLAZA - TECHNICAL DOCUMENTATION
+================================================================================
+
+This document outlines the JavaScript libraries used, front-end architecture,
+and database structure for the Game Plaza application.
+
+================================================================================
+1. JAVASCRIPT LIBRARIES & FRAMEWORKS
+================================================================================
+
+1.1 Frontend Framework & Styling
+------------------------------
+
+Bootstrap 5.3.0
+  Source: https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css
+  Purpose: Responsive CSS framework and UI components
+  Usage: Provides grid layout, buttons, cards, modals, navbar, forms
+  Features: Mobile-first design, dark theme support via CSS classes
+  Version: 5.3.0
+
+Bootstrap JS Bundle (5.3.0)
+  Source: https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js
+  Purpose: Interactive Bootstrap components (modals, dropdowns, tooltips)
+  Includes: Popper.js for positioning
+  Version: 5.3.0
+
+1.2 Animations & Scroll Effects
+------------------------------
+
+Animate On Scroll (AOS) 2.3.4
+  Source: https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js (JS)
+           https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css (CSS)
+  Purpose: Fade-in and slide animations triggered by scroll position
+  Usage: Initialized in layout.php with AOS.init()
+  Features: Observes viewport, applies CSS animations to elements with data-aos attributes
+  Version: 2.3.4
+
+1.3 Vanilla JavaScript
+------------------------------
+
+Fetch API (Built-in)
+  Purpose: Async HTTP requests to API endpoints
+  Usage: All page-specific JS files use fetch() for CRUD operations
+  Format: Sends/receives JSON
+  Error Handling: Checks response.ok and parses JSON error messages
+
+DOM API (Built-in)
+  Purpose: DOM manipulation and event listeners
+  Usage: addEventListener for forms, getElementById for elements, innerHTML for rendering
+  Features: Used for dynamic content updates without page reload
+
+1.4 No External JS Frameworks
+------------------------------
+
+The project does NOT use:
+  - jQuery
+  - React, Vue, Angular
+  - TypeScript
+  - Webpack or bundlers
+
+All functionality is built with vanilla JavaScript and Fetch API.
+
+================================================================================
+2. FRONT-END ARCHITECTURE
+================================================================================
+
+2.1 Page Structure
+------------------------------
+
+Base Layout (views/layout.php):
+  - Renders HTML head with Bootstrap, AOS, and custom CSS
+  - Navigation bar with links (logged-in vs guest views)
+  - Main container for page content
+  - Footer with script tags for Bootstrap, AOS, and page-specific JS
+
+Pages (views/*.php):
+  - Home: index.php - Landing/dashboard
+  - Auth: login.php, register.php - Authentication forms
+  - Profile: profile.php - User profile and preferences
+  - Games: games.php - Library management
+  - Matchmaking: matchmaking.php - Suggestions and filtering
+  - Matches: matches.php - Match creation and joining
+  - Discover: discover.php - Player search and follow
+  - Feed: feed.php - Followed players timeline
+
+2.2 JavaScript Files
+------------------------------
+
+auth.js:
+  - Handles login/register form submission
+  - Communicates with /api/auth/login.php and /api/auth/register.php
+  - Displays success/error messages
+  - Redirects on successful login
+
+profile.js:
+  - Fetches user profile from /api/users/get.php
+  - Displays user info, preferences, and skill level
+  - Handles profile update form submission to /api/users/update.php
+  - Updates genres and competitive preferences
+
+games.js:
+  - Displays user's game library from /api/games/library.php
+  - Shows available games catalog from /api/games/catalog.php
+  - Adds/removes games via /api/games/add.php and /api/games/remove.php
+  - Dynamically renders game cards
+
+matchmaking.js:
+  - Fetches suggestions from /api/matchmaking/suggestions.php
+  - Displays compatibility scores and shared games
+  - Shows is_followed indicator for prioritized players
+  - Allows user to navigate to player profiles
+
+matches.js:
+  - Lists all matches from /api/matches/list.php
+  - Creates new matches via /api/matches/create.php
+  - Joins matches via /api/matches/join.php
+  - Shows match status and participant count
+
+discover.js:
+  - Searches for players via /api/users/search.php
+  - Follows users via /api/social/follow.php
+  - Likes users via /api/social/like.php
+  - Displays followers count and follow status
+
+feed.js:
+  - Fetches followed players from /api/social/following.php
+  - Shows list of followed players with their info
+  - Displays bio, skill level, and preferred genres
+
+2.3 Error Handling
+------------------------------
+
+All pages include try-catch blocks for fetch errors:
+  - Network errors display alert("Failed to load data")
+  - API errors parse response JSON for error message
+  - Auth errors redirect to login page if 401 is returned
+  - Form validation shows error messages in modal/alert
+
+2.4 Data Flow
+------------------------------
+
+User Action → Form Submit → Fetch POST/GET → API Endpoint → JSON Response
+→ Parse & Validate → Update DOM → User Sees Result
+
+Example (Profile Update):
+  1. User fills profile form and clicks submit
+  2. profile.js gathers form data into object
+  3. Sends POST to /api/users/update.php with FormData
+  4. API validates and updates database
+  5. Returns {success: true} or {success: false, message: "..."}
+  6. JS updates page content or shows error message
+
+================================================================================
+3. DATABASE STRUCTURE
+================================================================================
+
+3.1 Tables Overview
+------------------------------
+
+users (Core User Data)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - username: VARCHAR(50) UNIQUE
+  - email: VARCHAR(100) UNIQUE
+  - password_hash: VARCHAR(255)
+  - bio: TEXT
+  - skill_level: ENUM('Beginner', 'Intermediate', 'Advanced', 'Pro')
+  - availability: VARCHAR(100)
+  - profile_created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  - updated_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE
+
+Purpose: Stores user account information and profile basics
+
+games (Game Catalog)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - name: VARCHAR(100) UNIQUE
+  - genre: VARCHAR(50)
+  - developer: VARCHAR(100)
+  - release_year: INT
+  - is_multiplayer: BOOLEAN DEFAULT TRUE
+
+Purpose: Central catalog of games available on the platform
+
+user_games (User Library - Many-to-Many)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - user_id: INT FOREIGN KEY (users.id) ON DELETE CASCADE
+  - game_id: INT FOREIGN KEY (games.id) ON DELETE CASCADE
+  - platform: ENUM('Steam', 'Epic Games', 'Blizzard', 'Riot Games', 'Other')
+  - playtime_hours: INT DEFAULT 0
+  - added_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  - UNIQUE KEY unique_user_game (user_id, game_id)
+
+Purpose: Links users to their owned/played games
+Unique Constraint: Prevents duplicate library entries per user-game pair
+
+user_preferences (User Settings)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - user_id: INT UNIQUE FOREIGN KEY (users.id) ON DELETE CASCADE
+  - preferred_genres: VARCHAR(200)
+  - preferred_playstyle: VARCHAR(100)
+  - competitive_preference: ENUM('Casual', 'Competitive', 'Mixed')
+  - team_size_preference: ENUM('Solo', 'Duo', 'Squad', 'Large')
+  - updated_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE
+
+Purpose: Stores user-specific matchmaking and gameplay preferences
+One-to-One: Each user has exactly one preference record
+
+matches (Match/Tournament Data)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - name: VARCHAR(100)
+  - game_id: INT FOREIGN KEY (games.id)
+  - creator_id: INT FOREIGN KEY (users.id) ON DELETE CASCADE
+  - match_type: ENUM('Casual', 'Tournament', 'Ranked')
+  - max_participants: INT DEFAULT 4
+  - status: ENUM('Pending', 'Active', 'Completed', 'Cancelled')
+  - scheduled_time: DATETIME
+  - description: TEXT
+  - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  - updated_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE
+
+Purpose: Stores match and tournament information
+Creator: User who initiated the match
+
+match_participants (Match Roster - Many-to-Many)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - match_id: INT FOREIGN KEY (matches.id) ON DELETE CASCADE
+  - user_id: INT FOREIGN KEY (users.id) ON DELETE CASCADE
+  - joined_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  - status: ENUM('Pending', 'Confirmed', 'Declined', 'Left')
+  - UNIQUE KEY unique_match_user (match_id, user_id)
+
+Purpose: Links users to matches they're participating in
+Status Tracking: Pending, Confirmed, Declined, or Left
+
+likes_follows (Social Relationships)
+  - id: INT PRIMARY KEY AUTO_INCREMENT
+  - follower_id: INT FOREIGN KEY (users.id) ON DELETE CASCADE
+  - followee_id: INT FOREIGN KEY (users.id) ON DELETE CASCADE
+  - action_type: ENUM('Like', 'Follow')
+  - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  - UNIQUE KEY unique_follow (follower_id, followee_id)
+
+Purpose: Tracks follow and like relationships between users
+Action Type: Distinguishes between "Follow" and "Like" actions
+Unique Constraint: Prevents duplicate follow/like per user pair
+
+3.2 Key Relationships
+------------------------------
+
+users (1) ----< (Many) user_games >---- (1) games
+  Description: User owns/plays multiple games, each game has multiple owners
+
+users (1) ----< (Many) matches (creator)
+  Description: User creates multiple matches
+
+users (1) ----< (Many) match_participants >---- (1) matches
+  Description: Users join multiple matches, each match has multiple participants
+
+users (1) ----< (Many) likes_follows >---- (1) users (followee)
+  Description: Users can follow/like other users (self-referencing)
+
+users (1) ----< (1) user_preferences
+  Description: Each user has exactly one preference record
+
+3.3 Indexes (Performance)
+------------------------------
+
+CREATE INDEX idx_user_games_user_id ON user_games(user_id);
+  Purpose: Speed up library lookups by user
+
+CREATE INDEX idx_user_games_game_id ON user_games(game_id);
+  Purpose: Speed up game popularity queries
+
+CREATE INDEX idx_matches_creator_id ON matches(creator_id);
+  Purpose: Speed up user's match listings
+
+CREATE INDEX idx_matches_game_id ON matches(game_id);
+  Purpose: Speed up game-specific match queries
+
+CREATE INDEX idx_match_participants_match_id ON match_participants(match_id);
+  Purpose: Speed up participant roster lookups
+
+CREATE INDEX idx_match_participants_user_id ON match_participants(user_id);
+  Purpose: Speed up user's match history
+
+3.4 Sample Data Entities
+------------------------------
+
+Games:
+  - League of Legends (Riot Games, MOBA)
+  - Counter-Strike 2 (Steam, FPS)
+  - Valorant (Riot Games, FPS)
+  - Dota 2 (Steam, MOBA)
+  - Minecraft (Multi-platform, Sandbox)
+
+Users:
+  - Populated during registration
+  - Skill levels: Beginner, Intermediate, Advanced, Pro
+  - Availability: Weekend, Evenings, Anytime
+  - Genres: MOBA, FPS, Sandbox, etc.
+
+Matches:
+  - Automatically created by users
+  - Status transitions: Pending → Active → Completed/Cancelled
+  - Participants track individual join status
+
+================================================================================
+4. DATA FLOW EXAMPLES
+================================================================================
+
+4.1 User Registration & Profile Setup
+------------------------------
+
+1. User visits register.php
+2. Fills username, email, password; submits form
+3. auth.js sends POST to /api/auth/register.php
+4. API validates, hashes password, inserts into users table
+5. Creates default user_preferences row for new user
+6. Returns session cookie
+7. Browser redirects to profile.php for first-time setup
+8. User updates bio, skill_level, availability, preferences
+9. profile.js sends POST to /api/users/update.php
+10. API validates and updates users and user_preferences tables
+11. User continues to games.php to build their library
+
+4.2 Matchmaking Flow
+------------------------------
+
+1. User navigates to matchmaking.php
+2. matchmaking.js fetches from /api/matchmaking/suggestions.php
+3. API queries:
+   - Current user's games, genres, skill level, availability
+   - All other users' games, preferences, skill level
+   - Calculates compatibility score:
+     * shared_games * 4
+     * genre_match * 2
+     * skill_level_bonus (1 if match, else 0)
+     * availability_bonus (1 if compatible, else 0)
+     * follow_bonus (5 if already followed by current user)
+4. Sorts suggestions by compatibility_score (descending)
+5. Returns top 12 suggestions with is_followed flag
+6. Frontend displays cards with player info and compatibility
+7. User clicks follow or message (navigate to profile)
+
+4.3 Match Creation & Joining
+------------------------------
+
+1. User navigates to matches.php
+2. Clicks "Create Match" button
+3. Form opens for match details (name, game, max_participants, type)
+4. User submits form
+5. matches.js sends POST to /api/matches/create.php
+6. API validates, inserts into matches table, returns match_id
+7. API auto-adds creator to match_participants table (status = 'Confirmed')
+8. Frontend displays new match in list
+9. Another user sees the match and clicks "Join"
+10. matches.js sends POST to /api/matches/join.php with match_id
+11. API inserts new row in match_participants (status = 'Pending')
+12. Frontend updates participant count
+13. Creator receives notification (if implemented) of pending join
+
+4.4 Social Follow Flow
+------------------------------
+
+1. User navigates to discover.php
+2. discover.js searches for players via /api/users/search.php
+3. Results display with follow button
+4. User clicks follow button on a player
+5. discover.js sends POST to /api/social/follow.php
+6. API inserts into likes_follows table (action_type = 'Follow')
+7. Frontend updates follow button to "Unfollow" (if implemented)
+8. User navigates to feed.php
+9. feed.js fetches from /api/social/following.php
+10. API queries likes_follows for all followee_id where follower_id = current_user
+11. Joins with users table to get followee info
+12. Returns followed player list with stats
+13. Frontend renders feed cards for each followed player
+
+================================================================================
+5. SECURITY CONSIDERATIONS
+================================================================================
+
+- Passwords: Hashed using password_hash() function
+- Sessions: Secure session handling in config/session.php
+- CORS: Currently not restricted; consider adding for production
+- SQL Injection: Protected via PDO prepared statements
+- Input Validation: Email, username, password validated in API endpoints
+- Authentication: Required routes check authUserId() session function
+- CSRF: Not currently implemented; consider adding for production
+
+================================================================================
+6. PERFORMANCE NOTES
+================================================================================
+
+- Database indexes on foreign keys and frequently queried columns
+- N+1 query avoidance: Matchmaking fetches users once, then processes in PHP
+- JSON caching: Responses are lightweight JSON; no heavy HTML rendering
+- Client-side rendering: Reduces server load; dynamic DOM updates with JS
+- Bootstrap CDN: Fast delivery via jsDelivr/CloudFlare
+- Single CSS file: style.css is minified for faster load times
+
+================================================================================
+7. FUTURE IMPROVEMENTS
+================================================================================
+
+- Add Redis caching for matchmaking suggestions
+- Implement real-time notifications with WebSockets
+- Add compatibility_scores cache table for O(1) lookups
+- Implement pagination for large result sets
+- Add rate limiting to API endpoints
+- Add comprehensive error logging and monitoring
+- Add unit tests for API endpoints and models
+- Implement proper CORS headers for multi-domain use
+
+================================================================================
+End of Technical Documentation
+================================================================================
