@@ -1,0 +1,137 @@
+body {
+    background: #111827;
+    color: #f8fafc;
+    min-height: 100vh;
+}
+
+.score-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.score-tooltip-box {
+    display: none;
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    min-width: 210px;
+    font-size: 0.82rem;
+    color: #f8fafc;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    z-index: 1000;
+    white-space: nowrap;
+}
+.score-tooltip-box::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #4b5563;
+}
+.score-wrapper:hover .score-tooltip-box {
+    display: block;
+}
+.score-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.1rem 0;
+}
+.score-tooltip-divider {
+    border-top: 1px solid #4b5563;
+    margin: 0.35rem 0;
+}
+.score-tooltip-total {
+    color: #818cf8;
+}
+
+.navbar-brand,
+.nav-link {
+    color: #f8fafc !important;
+}
+
+.card {
+    border: none;
+    color: #f8fafc;
+}
+
+.card-body {
+    background: #1f2937;
+    color: #f8fafc;
+}
+
+.bg-surface {
+    background: #1f2937;
+    border: 1px solid #4b5563 !important;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bg-surface:hover {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.2);
+}
+
+.text-muted {
+    color: #9ca3af !important;
+}
+
+input.form-control,
+textarea.form-control {
+    background: #111827;
+    color: #f8fafc;
+    border: 1px solid #374151;
+}
+
+input.form-control:focus,
+textarea.form-control:focus {
+    background: #111827;
+    color: #f8fafc;
+    border-color: #4f46e5;
+    box-shadow: none;
+}
+
+select.form-control,
+select.form-select {
+    background-color: #1f2937;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    color: #f8fafc;
+    border: 1px solid #4f46e5;
+    padding-right: 2.25rem;
+}
+
+select.form-control:focus,
+select.form-select:focus {
+    background-color: #1f2937;
+    color: #f8fafc;
+    border-color: #818cf8;
+    box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+}
+
+.btn-primary,
+.btn-success {
+    border: none;
+}
+
+.alert {
+    margin-top: 0.5rem;
+}
+
+.container {
+    max-width: 960px;
+}
+
+footer {
+    color: #9ca3af;
+    margin-top: 3rem;
+}
